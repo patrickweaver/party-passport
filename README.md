@@ -17,3 +17,7 @@ No server and no build step: open `index.html` from any static host. The live ca
 python3 -m http.server 8000
 # open http://localhost:8000
 ```
+
+## Deploy
+
+`.github/workflows/pages.yml` publishes the site to GitHub Pages on every push to `main`. One-time setup: repo Settings → Pages → Build and deployment → Source: **GitHub Actions**.
