@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Party Passport</title>
+  <meta name="theme-color" content="#12301f">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎄</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Oswald:wght@500;700&family=Playfair+Display:ital,wght@0,700;0,800;1,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Shared SVG filters for the rubber-stamp ink look -->
+  <svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="ink" x="-10%" y="-10%" width="120%" height="120%">
+        <!-- roughen the edges -->
+        <feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="2" seed="4" result="warp"/>
+        <feDisplacementMap in="SourceGraphic" in2="warp" scale="4" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+        <!-- fine speckles where ink didn't transfer -->
+        <feTurbulence type="fractalNoise" baseFrequency="0.38" numOctaves="3" seed="11" result="grain"/>
+        <feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -6 0 0 0 4.9" result="grainMask"/>
+        <!-- big uneven-pressure blotches -->
+        <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="7" result="blotch"/>
+        <feColorMatrix in="blotch" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -2.4 0 0 0 2.35" result="blotchMask"/>
+        <feComposite in="grainMask" in2="blotchMask" operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="mask"/>
+        <feComposite in="rough" in2="mask" operator="in"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <main class="passport">
+    <header class="passport-header">
+      <svg class="lights" viewBox="0 0 320 40" aria-hidden="true">
+        <path d="M0 6 Q40 26 80 8 T160 8 T240 8 T320 6" fill="none" stroke="#2b2b2b" stroke-width="1.5"/>
+        <g class="bulbs">
+          <ellipse cx="22" cy="22" rx="5" ry="8" fill="#c8102e"/>
+          <ellipse cx="58" cy="24" rx="5" ry="8" fill="#f2b33d"/>
+          <ellipse cx="100" cy="20" rx="5" ry="8" fill="#1f7a3f"/>
+          <ellipse cx="138" cy="18" rx="5" ry="8" fill="#2a6fdb"/>
+          <ellipse cx="182" cy="20" rx="5" ry="8" fill="#c8102e"/>
+          <ellipse cx="220" cy="18" rx="5" ry="8" fill="#f2b33d"/>
+          <ellipse cx="262" cy="20" rx="5" ry="8" fill="#1f7a3f"/>
+          <ellipse cx="300" cy="18" rx="5" ry="8" fill="#2a6fdb"/>
+        </g>
+      </svg>
+      <p class="eyebrow">Passport · Passeport · Reisepass</p>
+      <h1>Christmas Party<br><em>Passport</em></h1>
+      <p class="subtitle">Visit each station and collect every stamp.</p>
+      <p class="progress" id="progress"></p>
+    </header>
+
+    <ol class="stations" id="stations"></ol>
+
+    <footer class="passport-footer">
+      <button type="button" class="link-button" id="reset">Reset passport</button>
+    </footer>
+  </main>
+
+  <!-- Camera overlay -->
+  <section class="camera" id="camera" hidden data-state="starting" aria-modal="true" role="dialog" aria-labelledby="camera-instructions">
+    <div class="camera-top">
+      <button type="button" class="icon-button" id="camera-close" aria-label="Close camera">✕</button>
+      <p class="camera-instructions" id="camera-instructions"></p>
+    </div>
+
+    <div class="camera-stage">
+      <video id="camera-video" playsinline muted autoplay></video>
+      <img id="camera-preview" alt="Your photo">
+      <div class="camera-guide" aria-hidden="true"></div>
+      <div class="camera-fallback">
+        <p id="camera-fallback-text">We couldn’t open the camera here.</p>
+        <label class="button" for="camera-file">Open camera</label>
+      </div>
+    </div>
+
+    <div class="camera-controls">
+      <div class="controls-live">
+        <button type="button" class="icon-button" id="camera-flip" aria-label="Switch camera">⟲</button>
+        <button type="button" class="shutter" id="camera-shutter" aria-label="Take photo"></button>
+        <span class="icon-spacer"></span>
+      </div>
+      <div class="controls-review">
+        <button type="button" class="button button-ghost" id="camera-retake">Retake</button>
+        <button type="button" class="button" id="camera-use">Use photo</button>
+      </div>
+    </div>
+    <input type="file" id="camera-file" accept="image/*" capture="user" hidden>
+  </section>
+
+  <!-- Question sheet (for stations that ask something after the photo) -->
+  <section class="sheet" id="sheet" hidden aria-modal="true" role="dialog" aria-labelledby="sheet-title">
+    <form class="sheet-card" id="sheet-form" autocomplete="off">
+      <p class="eyebrow" id="sheet-station"></p>
+      <h2 id="sheet-title">Almost stamped!</h2>
+      <div class="sheet-photo"><img id="sheet-photo" alt="Your photo"></div>
+      <label class="field">
+        <span id="sheet-question"></span>
+        <input type="text" id="sheet-answer" required maxlength="40" autocapitalize="words">
+      </label>
+      <button type="submit" class="button">Stamp my passport</button>
+      <div class="sheet-secondary">
+        <button type="button" class="link-button" id="sheet-retake">Retake photo</button>
+        <button type="button" class="link-button" id="sheet-cancel">Cancel</button>
+      </div>
+    </form>
+  </section>
+
+  <script src="stations.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
